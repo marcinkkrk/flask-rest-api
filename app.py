@@ -1,22 +1,84 @@
-from flask import Flask, request
+from flask import Flask, jsonify, request
 
+
+POSTS = [
+    {
+        'id': 1,
+        'title': 'title 1',
+        'text': 'text 1'
+    },
+    {
+        'id': 2,
+        'title': 'title 2',
+        'text': 'text 2'
+    },
+{
+        'id': 3,
+        'title': 'title 3',
+        'text': 'text 3'
+    },
+{
+        'id': 4,
+        'title': 'title 4',
+        'text': 'text 4'
+    }
+
+]
 app = Flask(__name__)
 
+@app.route('/posts', methods=['GET', 'POST'])
+def items():
+    response_data = {
+        'success': True,
+        'data': []
+    }
 
-@app.route('/')      # argument / means main page of app
-def index():
-    # print(request.headers)   # request is a global object
-    # print(f' method: {request.method}')
-    # print(f' method: {request.path}')
-    # print(f' method: {request.url}')
-    # print(request.headers['Authorization'])
-    # print(request.headers['Content-Type'])
-    # print(request.json)
-    # print(request.json['name'])
-    # print(request.json.get('name'))
+    if request.method == 'GET':
+        response_data['data'] = POSTS
+        return jsonify(response_data)
+    elif request.method == 'POST':
+        data = request.json
+        if 'id' not in data or 'title' not in data or 'text' not in data:
+            response_data['success'] = False
+            response_data['error'] = "Please provide all required information"
+            response = jsonify(response_data)
+            response.status_code = 400
+        else:
+            POSTS.append(data)
+            response_data['data'] = POSTS
+            response = jsonify(response_data)
+            response.status_code = 201
+        return response
 
+@app.route('/posts/<int:post_id>')     #jak nie podamy methods to domyślnie będzie GET
+def item(post_id):
+    response_data = {
+        'success': True,
+        'data': []
+    }
 
-    return 'Hello from Flask!!!!!'
+    try:
+        item = [post for post in POSTS if post['id'] == post_id][0]
+    except IndexError:
+        response_data['success'] = False
+        response_data['error'] = 'Not found'
+        response = jsonify(response_data)
+        response.status_code = 404
+    else:
+        response_data['data'] = item
+        response = jsonify(response_data)
+    return response
+
+@app.errorhandler(404)   #rejstruje funkcję która będzie odpowiedzialna za obsługę błedu
+def not_found(error):
+    response_data = {
+        'success': False,
+        'data': [],
+        'error': 'Not found'
+    }
+    response = jsonify(response_data)
+    response.status_code = 404
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)  # run app    # debuy = True -> auto restart after any change, more info about errors
